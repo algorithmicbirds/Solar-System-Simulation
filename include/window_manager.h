@@ -3,6 +3,7 @@
 
 #include <GLFW/glfw3.h>
 #include <camera.h>
+#include <chrono>
 
 class WindowManager {
 public:
@@ -23,6 +24,8 @@ private:
   bool firstMouse;
   bool isFullscreen;
   int windowedWidth, windowedHeight;
+  std::chrono::steady_clock::time_point lastToggleTime =
+      std::chrono::steady_clock::now();
 
   void initWindow(int width, int height);
   void toggleFullscreen();

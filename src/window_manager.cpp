@@ -2,6 +2,7 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <window_manager.h>
+#include <chrono>
 
 WindowManager::WindowManager(int width, int height, Camera *cam)
     : window(nullptr), camera(cam), firstMouse(true), lastX(width / 2.0),
@@ -18,8 +19,8 @@ void WindowManager::initWindow(int width, int height) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  window = glfwCreateWindow(width, height, "Solar System Simulation", NULL,
-                            NULL);
+  window =
+      glfwCreateWindow(width, height, "Solar System Simulation", NULL, NULL);
   if (window == NULL) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
@@ -67,8 +68,7 @@ void WindowManager::pollEvents() { glfwPollEvents(); }
 
 void WindowManager::framebuffer_size_callback(GLFWwindow *window, int width,
                                               int height) {
-  glViewport(0, 0, width,
-             height);
+  glViewport(0, 0, width, height);
   WindowManager *wm =
       static_cast<WindowManager *>(glfwGetWindowUserPointer(window));
   wm->camera->setAspectRatio((float)width / (float)height);
@@ -93,6 +93,16 @@ void WindowManager::mouse_callback(GLFWwindow *window, double xpos,
 }
 
 void WindowManager::toggleFullscreen() {
+
+  auto now = std::chrono::steady_clock::now();
+  if (std::chrono::duration_cast<std::chrono::milliseconds>(now -
+                                                            lastToggleTime)
+          .count() < 200) {
+    return;
+  }
+
+  lastToggleTime = now;
+
   isFullscreen = !isFullscreen;
   if (isFullscreen) {
     glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
