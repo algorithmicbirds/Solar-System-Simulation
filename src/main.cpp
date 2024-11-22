@@ -5,7 +5,6 @@
 #include <ctime>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <sphere.h>
 #include <camera.h>
 #include <starfield.h>
 #include <window_manager.h>
@@ -25,18 +24,12 @@ int main() {
   WindowManager windowManager(SCR_WIDTH, SCR_HEIGHT, &camera);
   glfwSetWindowUserPointer(windowManager.window, &windowManager);
 
-  Shader starfieldShader(RESOURCES_PATH "starfield.vert",
-                         RESOURCES_PATH "starfield.frag");
-  Shader sphereShader(RESOURCES_PATH "sphere.vert",
-                      RESOURCES_PATH "sphere.frag");
+  Shader starfieldShader(RESOURCES_PATH "shaders/starfield.vert",
+                         RESOURCES_PATH "shaders/starfield.frag");
+  Shader modelShader(RESOURCES_PATH "shaders/sphere.vert",
+                     RESOURCES_PATH "shaders/sphere.frag");
 
-  Sphere sphere1(1.0f, 16, 32, &sphereShader);
-  Sphere sphere2(1.0f, 16, 32, &sphereShader);
-
-  glm::mat4 projection = glm::perspective(
-      glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 10000.0f);
   Starfield starfield1(5000, 5000.0f);
-  Starfield starfield2(2000, 10.0f);
 
   std::vector<Mesh> modelMeshes =
       ModelLoader::loadModel(RESOURCES_PATH "models/testSphere.glb");
@@ -44,6 +37,9 @@ int main() {
   windowManager.setupCallbacks();
 
   glm::mat4 view;
+  glm::mat4 projection = glm::perspective(
+      glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 10000.0f);
+
   while (!windowManager.shouldClose()) {
     float currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -61,21 +57,18 @@ int main() {
     starfieldShader.setMat4("view", view);
     starfield1.render(starfieldShader, projection, view);
 
-    sphereShader.use();
-    sphereShader.setMat4("projection", projection);
-    sphereShader.setMat4("view", view);
-
-    sphere1.render(projection, view, glm::vec3(-2.0f, 0.0f, -5.0f));
-    sphere2.render(projection, view, glm::vec3(2.0f, 0.0f, -5.0f));
+    modelShader.use();
+    modelShader.setMat4("projection", projection);
+    modelShader.setMat4("view", view);
 
     for (Mesh &mesh : modelMeshes) {
       glm::mat4 model = glm::mat4(1.0f);
-      model = glm::translate(model, glm::vec3(0.0f, 0.0f, -10.0f));
-      model = glm::scale(model, glm::vec3(0.5f));
+      model = glm::translate(model, glm::vec3(0.0f, 0.0f, -5.0f));
+      model = glm::scale(model, glm::vec3(1.0f));
 
-      sphereShader.use();
-      sphereShader.setMat4("model", model);
-      mesh.Draw(sphereShader);
+      modelShader.use();
+      modelShader.setMat4("model", model);
+      mesh.Draw(modelShader);
     }
 
     windowManager.swapBuffers();
