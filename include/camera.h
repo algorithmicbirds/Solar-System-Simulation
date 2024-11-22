@@ -2,7 +2,7 @@
 #define CAMERA_H
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtc/matrix_transform.hpp>
 
 class Camera {
 public:
@@ -21,10 +21,10 @@ public:
          float startYaw = -90.0f, float startPitch = 0.0f,
          float startFov = 45.0f);
 
-  glm::mat4 getViewMatrix() const; 
+  glm::mat4 getViewMatrix() const;
 
   void processKeyboardInput(float deltaTime, bool w, bool s, bool a, bool d,
-                            bool space, bool shift);
+                            bool space, bool shift, bool f);
   void processMouseMovement(float xOffset, float yOffset);
 
   void setAspectRatio(float aspectRatio);
@@ -34,7 +34,7 @@ private:
   void updateCameraFront();
   void updateProjection();
 
-  glm::mat4 projection; 
+  glm::mat4 projection;
 };
 
 #endif

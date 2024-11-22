@@ -49,12 +49,9 @@ void WindowManager::processInput(float deltaTime) {
   bool d = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
   bool space = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
   bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+  bool f = glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS;
 
-  camera->processKeyboardInput(deltaTime, w, s, a, d, space, shift);
-
-  if (glfwGetKey(window, GLFW_KEY_F11) == GLFW_PRESS) {
-    toggleFullscreen();
-  }
+  camera->processKeyboardInput(deltaTime, w, s, a, d, space, shift, f);
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -90,35 +87,4 @@ void WindowManager::mouse_callback(GLFWwindow *window, double xpos,
   wm->lastY = ypos;
 
   wm->camera->processMouseMovement(xoffset, yoffset);
-}
-
-void WindowManager::toggleFullscreen() {
-
-  auto now = std::chrono::steady_clock::now();
-  if (std::chrono::duration_cast<std::chrono::milliseconds>(now -
-                                                            lastToggleTime)
-          .count() < 200) {
-    return;
-  }
-
-  lastToggleTime = now;
-
-  isFullscreen = !isFullscreen;
-  if (isFullscreen) {
-    glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
-
-    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-
-    glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height,
-                         mode->refreshRate);
-  } else {
-    glfwSetWindowMonitor(window, nullptr, 100, 100, windowedWidth,
-                         windowedHeight, GLFW_DONT_CARE);
-  }
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  glViewport(0, 0, width, height);
-
-  camera->setAspectRatio((float)width / (float)height);
 }

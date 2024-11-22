@@ -6,9 +6,9 @@ Camera::Camera(glm::vec3 startPosition, float startYaw, float startPitch,
                float startFov)
     : position(startPosition), yaw(startYaw), pitch(startPitch), fov(startFov),
       front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f, 1.0f, 0.0f)),
-      speed(2.5f), sensitivity(0.01f) {
+      speed(2.5f), sensitivity(0.05f) {
   updateCameraFront();
-  updateProjection(); 
+  updateProjection();
 }
 
 glm::mat4 Camera::getViewMatrix() const {
@@ -16,21 +16,30 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 void Camera::processKeyboardInput(float deltaTime, bool w, bool s, bool a,
-                                  bool d, bool space, bool shift) {
+                                  bool d, bool space, bool shift, bool f) {
   float cameraSpeed = speed * deltaTime;
+  if (shift) {
+    cameraSpeed = cameraSpeed * 2;
+  }
+  if (w) {
 
-  if (w)
     position += cameraSpeed * front;
-  if (s)
+  }
+  if (s) {
     position -= cameraSpeed * front;
-  if (a)
+  }
+  if (a) {
     position -= glm::normalize(glm::cross(front, up)) * cameraSpeed;
-  if (d)
+  }
+  if (d) {
     position += glm::normalize(glm::cross(front, up)) * cameraSpeed;
-  if (space)
-    position += cameraSpeed * up;
-  if (shift)
+  }
+  if (space) {
     position -= cameraSpeed * up;
+  }
+  if (f) {
+    position += cameraSpeed * up;
+  }
 }
 
 void Camera::processMouseMovement(float xOffset, float yOffset) {
@@ -61,6 +70,5 @@ void Camera::setAspectRatio(float aspectRatio) {
 }
 
 void Camera::updateProjection() {
-  projection = glm::perspective(glm::radians(fov), 1.0f, 0.1f,
-                                100.0f); 
+  projection = glm::perspective(glm::radians(fov), 1.0f, 0.1f, 100.0f);
 }
