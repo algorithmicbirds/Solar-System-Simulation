@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <celestial_body.h>
 
 class Camera {
 public:
@@ -21,14 +22,15 @@ public:
          float startYaw = -90.0f, float startPitch = 0.0f,
          float startFov = 45.0f);
 
-  glm::mat4 getViewMatrix() const;
+  virtual glm::mat4 getViewMatrix() const;
 
-  void processKeyboardInput(float deltaTime, bool w, bool s, bool a, bool d,
-                            bool space, bool shift, bool f);
+  virtual void processKeyboardInput(float deltaTime, bool w, bool s, bool a,
+                                    bool d, bool space, bool shift, bool f);
   void processMouseMovement(float xOffset, float yOffset);
 
   void setAspectRatio(float aspectRatio);
   glm::mat4 getProjectionMatrix() const { return projection; }
+  glm::vec3 calculateGravitationalForce(const CelestialBody &body);
 
 private:
   void updateCameraFront();

@@ -2,7 +2,6 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <window_manager.h>
-#include <chrono>
 
 WindowManager::WindowManager(int width, int height, Camera *cam)
     : window(nullptr), camera(cam), firstMouse(true), lastX(width / 2.0),
@@ -14,20 +13,25 @@ WindowManager::WindowManager(int width, int height, Camera *cam)
 WindowManager::~WindowManager() { glfwTerminate(); }
 
 void WindowManager::initWindow(int width, int height) {
-  glfwInit();
+  if (!glfwInit()) {
+    std::cerr << "Failed to initialize GLFW" << std::endl;
+    exit(-1);
+  }
+
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   window =
       glfwCreateWindow(width, height, "Solar System Simulation", NULL, NULL);
-  if (window == NULL) {
+  if (window == nullptr) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
     exit(-1);
   }
 
   glfwMakeContextCurrent(window);
+
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     std::cerr << "Failed to initialize GLAD" << std::endl;
     exit(-1);
@@ -39,7 +43,8 @@ void WindowManager::initWindow(int width, int height) {
 void WindowManager::setupCallbacks() {
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void WindowManager::processInput(float deltaTime) {
@@ -75,6 +80,12 @@ void WindowManager::mouse_callback(GLFWwindow *window, double xpos,
                                    double ypos) {
   WindowManager *wm =
       static_cast<WindowManager *>(glfwGetWindowUserPointer(window));
+
+  bool altPressed = glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS;
+
+  if (altPressed) {
+  }
+
   if (wm->firstMouse) {
     wm->lastX = xpos;
     wm->lastY = ypos;
@@ -83,8 +94,9 @@ void WindowManager::mouse_callback(GLFWwindow *window, double xpos,
 
   float xoffset = xpos - wm->lastX;
   float yoffset = wm->lastY - ypos;
-  wm->lastX = xpos;
-  wm->lastY = ypos;
 
   wm->camera->processMouseMovement(xoffset, yoffset);
+
+  wm->lastX = xpos;
+  wm->lastY = ypos;
 }

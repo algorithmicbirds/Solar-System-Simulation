@@ -1,12 +1,13 @@
 #include <camera.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
+#include <globals.h>
 
 Camera::Camera(glm::vec3 startPosition, float startYaw, float startPitch,
                float startFov)
     : position(startPosition), yaw(startYaw), pitch(startPitch), fov(startFov),
       front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f, 1.0f, 0.0f)),
-      speed(2.5f), sensitivity(0.05f) {
+      speed(10.5f), sensitivity(0.05f) {
   updateCameraFront();
   updateProjection();
 }
@@ -67,6 +68,20 @@ void Camera::updateCameraFront() {
 
 void Camera::setAspectRatio(float aspectRatio) {
   projection = glm::perspective(glm::radians(fov), aspectRatio, 0.1f, 100.0f);
+}
+
+glm::vec3 Camera::calculateGravitationalForce(const CelestialBody &body) {
+  glm::vec3 direction = body.position - position;
+  float distance = glm::length(direction);
+  if (distance == 0.0f)
+    return glm::vec3(0.0f); // Avoid division by zero
+
+  // Gravitational force: F = G * (M * m) / r^2
+  float forceMagnitude =
+      gravitationalConstant * (body.mass) / (distance * distance);
+  glm::vec3 force = glm::normalize(direction) * forceMagnitude;
+
+  return force;
 }
 
 void Camera::updateProjection() {
