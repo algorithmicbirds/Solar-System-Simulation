@@ -9,7 +9,7 @@ class WindowManager {
 public:
   GLFWwindow *window;
   Camera *camera;
-
+  static double deltaTime;
   WindowManager(int width, int height, Camera *cam);
   ~WindowManager();
 

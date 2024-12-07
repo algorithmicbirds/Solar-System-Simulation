@@ -3,40 +3,37 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
 #include <celestial_body.h>
+#include <globals.h>
 
 class Camera {
 public:
-  glm::vec3 position;
-  glm::vec3 front;
-  glm::vec3 up;
+  glm::vec3 position; // Camera position in space
+  glm::vec3 front;    // Camera's front vector
+  glm::vec3 up;       // Camera's up vector
+  glm::vec3 right;    // Camera's right vector
+  glm::vec3 worldUp;  // The world "up" vector (constant)
 
-  float yaw;
-  float pitch;
-  float fov;
+  float yaw;   // Camera's yaw (rotation around y-axis)
+  float pitch; // Camera's pitch (rotation around x-axis)
+  float fov;   // Field of view
 
-  float speed;
-  float sensitivity;
-
-  Camera(glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 20.0f),
-         float startYaw = -90.0f, float startPitch = 0.0f,
-         float startFov = 45.0f);
-
-  virtual glm::mat4 getViewMatrix() const;
-
-  virtual void processKeyboardInput(float deltaTime, bool w, bool s, bool a,
-                                    bool d, bool space, bool shift, bool f);
-  void processMouseMovement(float xOffset, float yOffset);
-
-  void setAspectRatio(float aspectRatio);
-  glm::mat4 getProjectionMatrix() const { return projection; }
-  glm::vec3 calculateGravitationalForce(const CelestialBody &body);
-
-private:
-  void updateCameraFront();
-  void updateProjection();
-
+  float speed;       // Movement speed
+  float sensitivity; // Mouse sensitivity
   glm::mat4 projection;
+
+  Camera(glm::vec3 startPosition, float startYaw, float startPitch,
+         float startFov);
+
+  glm::mat4 getViewMatrix() const;
+  void processKeyboardInput(float deltaTime, bool w, bool s, bool a, bool d,
+                            bool space, bool shift);
+  void processMouseMovement(float xOffset, float yOffset);
+  void updateCameraFront();
+  void setAspectRatio(float aspectRatio);
+  void updateProjection();
+  glm::vec3 calculateGravitationalForce(const CelestialBody &body);
 };
 
 #endif

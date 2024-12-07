@@ -1,13 +1,10 @@
 #include <camera.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/constants.hpp>
-#include <globals.h>
 
 Camera::Camera(glm::vec3 startPosition, float startYaw, float startPitch,
                float startFov)
     : position(startPosition), yaw(startYaw), pitch(startPitch), fov(startFov),
       front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f, 1.0f, 0.0f)),
-      speed(10.5f), sensitivity(0.05f) {
+      worldUp(glm::vec3(0.0f, 1.0f, 0.0f)), speed(2000.5f), sensitivity(0.05f) {
   updateCameraFront();
   updateProjection();
 }
@@ -17,13 +14,13 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 void Camera::processKeyboardInput(float deltaTime, bool w, bool s, bool a,
-                                  bool d, bool space, bool shift, bool f) {
+                                  bool d, bool space, bool shift) {
   float cameraSpeed = speed * deltaTime;
   if (shift) {
-    cameraSpeed = cameraSpeed * 2;
+    cameraSpeed *= 2; // Faster movement (shift key)
   }
-  if (w) {
 
+  if (w) {
     position += cameraSpeed * front;
   }
   if (s) {
@@ -36,10 +33,10 @@ void Camera::processKeyboardInput(float deltaTime, bool w, bool s, bool a,
     position += glm::normalize(glm::cross(front, up)) * cameraSpeed;
   }
   if (space) {
-    position -= cameraSpeed * up;
+    position += cameraSpeed * up; // Move up (jump/fly)
   }
-  if (f) {
-    position += cameraSpeed * up;
+  if (shift) {
+    position -= cameraSpeed * up; // Move down
   }
 }
 
@@ -48,7 +45,7 @@ void Camera::processMouseMovement(float xOffset, float yOffset) {
   yOffset *= sensitivity;
 
   yaw += xOffset;
-  pitch += yOffset;
+  pitch -= yOffset; // Invert the y-axis if needed (FPS convention)
 
   if (pitch > 89.0f)
     pitch = 89.0f;
@@ -64,6 +61,10 @@ void Camera::updateCameraFront() {
   newFront.y = sin(glm::radians(pitch));
   newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
   front = glm::normalize(newFront);
+
+  // Recalculate the right and up vectors
+  right = glm::normalize(glm::cross(front, worldUp)); // Right vector
+  up = glm::normalize(glm::cross(right, front));      // Up vector
 }
 
 void Camera::setAspectRatio(float aspectRatio) {
@@ -76,7 +77,6 @@ glm::vec3 Camera::calculateGravitationalForce(const CelestialBody &body) {
   if (distance == 0.0f)
     return glm::vec3(0.0f); // Avoid division by zero
 
-  // Gravitational force: F = G * (M * m) / r^2
   float forceMagnitude =
       gravitationalConstant * (body.mass) / (distance * distance);
   glm::vec3 force = glm::normalize(direction) * forceMagnitude;

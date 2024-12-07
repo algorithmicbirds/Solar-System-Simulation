@@ -16,7 +16,7 @@
 #include <collision_detector.h>
 #include <globals.h>
 
-Camera camera(glm::vec3(0.0f, 0.0f, 20.0f), 0.0f, 0.0f, 45.0f);
+Camera camera(glm::vec3(100.0f, 4.0f, 0.0f), 0.0f, 0.0f, 45.0f);
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -27,6 +27,7 @@ glm::vec3 calculateOrbitalVelocity(float centralMass, float distance) {
 }
 
 int main() {
+  // Set up the window manager with the camera
   WindowManager windowManager(SCR_WIDTH, SCR_HEIGHT, &camera);
   glfwSetWindowUserPointer(windowManager.window, &windowManager);
 
@@ -45,17 +46,18 @@ int main() {
   glm::mat4 projection = glm::perspective(
       glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 10000.0f);
 
-  CelestialBody centralBody(5.0f, 10000.0f, glm::vec3(0.0f), glm::vec3(0.0f));
-  float distanceBuffer = 10.0f;
+  CelestialBody centralBody(25.0f, 1000000.0f, glm::vec3(0.0f),
+                            glm::vec3(0.0f));
+  float distanceBuffer = 100.0f;
 
   CelestialBody body1(
-      2.0f, 500.0f, glm::vec3(50.0f + distanceBuffer, 0.0f, 0.0f),
+      20.0f, 5000.0f, glm::vec3(50.0f + distanceBuffer, 0.0f, 0.0f),
       calculateOrbitalVelocity(centralBody.mass, 50.0f + distanceBuffer));
   CelestialBody body2(
-      2.0f, 500.0f, glm::vec3(150.0f + distanceBuffer, 0.0f, 0.0f),
+      15.0f, 5000.0f, glm::vec3(150.0f + distanceBuffer, 0.0f, 0.0f),
       calculateOrbitalVelocity(centralBody.mass, 150.0f + distanceBuffer));
   CelestialBody body3(
-      2.0f, 500.0f, glm::vec3(250.0f + distanceBuffer, 0.0f, 0.0f),
+      10.0f, 5000.0f, glm::vec3(250.0f + distanceBuffer, 0.0f, 0.0f),
       calculateOrbitalVelocity(centralBody.mass, 250.0f + distanceBuffer));
 
   std::vector<CelestialBody> bodies = {centralBody, body1, body2, body3};
@@ -63,6 +65,7 @@ int main() {
   RayCaster rayCaster(&camera);
   CollisionDetector collisionDetector(&rayCaster);
 
+  // Main game loop
   while (!windowManager.shouldClose()) {
     float currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -75,15 +78,19 @@ int main() {
       totalGravitationalForce += camera.calculateGravitationalForce(body);
     }
 
+    // Move the camera based on gravitational forces acting on it
     camera.position += totalGravitationalForce * deltaTime;
 
+    // Resolve any camera collisions
     collisionDetector.resolveCameraCollisions(camera, bodies);
 
     view = camera.getViewMatrix();
 
+    // Clear the screen and enable depth testing
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
+    // Render the starfield
     starfieldShader.use();
     starfieldShader.setMat4("projection", projection);
     starfieldShader.setMat4("view", view);
@@ -93,6 +100,7 @@ int main() {
     modelShader.setMat4("projection", projection);
     modelShader.setMat4("view", view);
 
+    // Update and render celestial bodies
     for (auto &body : bodies) {
       glm::vec3 totalForce(0.0f);
       for (const auto &otherBody : bodies) {
@@ -104,18 +112,23 @@ int main() {
       body.updateBody(deltaTime, totalForce);
     }
 
-    // render the bodies
+    // Render the celestial bodies with their updated positions and sizes
     for (const auto &body : bodies) {
       modelShader.use();
       glm::mat4 model = glm::mat4(1.0f);
       model = glm::translate(model, body.position);
-      model = glm::scale(model, glm::vec3(body.radius));
+
+      model = glm::scale(
+          model, glm::vec3(body.radius)); // Directly use the radius to scale
       modelShader.setMat4("model", model);
+
+      // Draw the meshes
       for (Mesh &mesh : modelMeshes) {
         mesh.Draw(modelShader);
       }
     }
 
+    // Swap buffers and poll events
     windowManager.swapBuffers();
     windowManager.pollEvents();
   }
