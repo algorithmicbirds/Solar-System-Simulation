@@ -9,6 +9,15 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+
+# Disable Bullet3 Examples, Applications, and Tests
+set(BUILD_EXAMPLES OFF CACHE BOOL "Disable Bullet3 Examples" FORCE)
+set(BUILD_APP_EXAMPLES OFF CACHE BOOL "Disable Bullet3 Applications" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "Disable Bullet3 Tests" FORCE)
+set(BUILD_BULLET3_EXAMPLES OFF CACHE BOOL "Disable Bullet3 ExampleBrowser and other examples" FORCE)
+set(BUILD_BULLET3_DEMOS OFF CACHE BOOL "Disable Bullet3 Demos" FORCE)
+
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(thirdparty/glfw-3.3.2)			#window oppener
 add_subdirectory(thirdparty/glad)				#opengl loader
@@ -17,6 +26,7 @@ add_subdirectory(thirdparty/stb_truetype)		#loading ttf files
 add_subdirectory(thirdparty/glm)				#math
 add_subdirectory(thirdparty/imgui-docking)		#ui
 add_subdirectory(thirdparty/assimp)             #Model loader
+add_subdirectory(thirdparty/bullet3)
 
 
 # Define MY_SOURCES to be a list of all the source file
@@ -49,7 +59,8 @@ endif()
 
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image 
+    stb_truetype imgui assimp Bullet3Common Bullet3Dynamics 
+    Bullet3Collision)
 
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw 
-	glad stb_image stb_truetype imgui assimp)
 
