@@ -14,6 +14,7 @@
 #include <celestial_body.h>
 #include <raycaster.h>
 #include <collision_detector.h>
+#include <globals.h>
 
 Camera camera(glm::vec3(0.0f, 0.0f, 20.0f), 0.0f, 0.0f, 45.0f);
 
@@ -76,6 +77,8 @@ int main() {
 
     camera.position += totalGravitationalForce * deltaTime;
 
+    collisionDetector.resolveCameraCollisions(camera, bodies);
+
     view = camera.getViewMatrix();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -92,7 +95,6 @@ int main() {
 
     for (auto &body : bodies) {
       glm::vec3 totalForce(0.0f);
-
       for (const auto &otherBody : bodies) {
         if (&body != &otherBody) {
           totalForce += body.calculateGravitationalForce(otherBody);
@@ -102,6 +104,7 @@ int main() {
       body.updateBody(deltaTime, totalForce);
     }
 
+    // render the bodies
     for (const auto &body : bodies) {
       modelShader.use();
       glm::mat4 model = glm::mat4(1.0f);
@@ -112,11 +115,6 @@ int main() {
         mesh.Draw(modelShader);
       }
     }
-
-    /** check for collision with the terrain or celestial bodies using the
-     falling ray **/
-    collisionDetector.checkCollisionWithTerrain(500.0f, 400.0f, projection,
-                                                view, bodies);
 
     windowManager.swapBuffers();
     windowManager.pollEvents();

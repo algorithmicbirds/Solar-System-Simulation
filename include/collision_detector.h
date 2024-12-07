@@ -16,6 +16,9 @@ public:
                                  const glm::mat4 &view,
                                  const std::vector<CelestialBody> &bodies);
 
+  void resolveCameraCollisions(Camera &camera,
+                               std::vector<CelestialBody> &bodies);
+
 private:
   RayCaster *rayCaster;
 };

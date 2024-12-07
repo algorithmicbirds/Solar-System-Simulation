@@ -1,18 +1,17 @@
 #include <raycaster.h>
+#include <globals.h>
 
-// constructor for RayCaster that stores the camera reference
 RayCaster::RayCaster(Camera *camera) : camera(camera) {}
 
-/** Calculate the ray from the camera through the screen position (mouse
- * coordinates)**/
-
+/** calculate the ray from the camera through the screen position (mouse
+  coordinates) **/
 Ray RayCaster::getRayFromScreenCoordinates(float x, float y,
                                            const glm::mat4 &projection,
                                            const glm::mat4 &view) {
   // convert screen coordinates to normalized device coordinates (NDC)
   glm::vec4 clipSpacePos =
       glm::vec4((x / SCR_WIDTH) * 2.0f - 1.0f,
-                -((y / SCR_HEIGHT) * 2.0f - 1.0f), -1.0f, 1.0f); // Near plane
+                -((y / SCR_HEIGHT) * 2.0f - 1.0f), -1.0f, 1.0f); // near plane
 
   // inverse of the projection matrix to convert to eye space
   glm::mat4 inverseProj = glm::inverse(projection);
@@ -26,13 +25,13 @@ Ray RayCaster::getRayFromScreenCoordinates(float x, float y,
   // convert eye space to world space
   glm::vec4 worldSpacePos = inverseView * eyeSpacePos;
 
-  // normalize the direction of the ray
+  // Normalize the direction of the ray
   glm::vec3 rayDir = glm::normalize(glm::vec3(worldSpacePos));
 
   return Ray(camera->position, rayDir);
 }
 
-// check if the ray intersects with a celestial body (a sphere for simplicity)
+// Check if the ray intersects
 bool RayCaster::checkRayIntersection(const Ray &ray,
                                      const CelestialBody &body) {
   glm::vec3 oc = ray.origin -
