@@ -4,7 +4,7 @@ Camera::Camera(glm::vec3 startPosition, float startYaw, float startPitch,
                float startFov)
     : position(startPosition), yaw(startYaw), pitch(startPitch), fov(startFov),
       front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f, 1.0f, 0.0f)),
-      worldUp(glm::vec3(0.0f, 1.0f, 0.0f)), speed(2000.5f), sensitivity(0.05f) {
+      worldUp(glm::vec3(0.0f, 1.0f, 0.0f)), speed(2000.5f), sensitivity(0.007f) {
   updateCameraFront();
   updateProjection();
 }
@@ -17,7 +17,7 @@ void Camera::processKeyboardInput(float deltaTime, bool w, bool s, bool a,
                                   bool d, bool space, bool shift) {
   float cameraSpeed = speed * deltaTime;
   if (shift) {
-    cameraSpeed *= 2; // Faster movement (shift key)
+    cameraSpeed *= 2;
   }
 
   if (w) {
@@ -33,10 +33,10 @@ void Camera::processKeyboardInput(float deltaTime, bool w, bool s, bool a,
     position += glm::normalize(glm::cross(front, up)) * cameraSpeed;
   }
   if (space) {
-    position += cameraSpeed * up; // Move up (jump/fly)
+    position += cameraSpeed * up; 
   }
   if (shift) {
-    position -= cameraSpeed * up; // Move down
+    position -= cameraSpeed * up;
   }
 }
 
@@ -45,7 +45,7 @@ void Camera::processMouseMovement(float xOffset, float yOffset) {
   yOffset *= sensitivity;
 
   yaw += xOffset;
-  pitch -= yOffset; // Invert the y-axis if needed (FPS convention)
+  pitch -= yOffset; 
 
   if (pitch > 89.0f)
     pitch = 89.0f;
@@ -62,9 +62,9 @@ void Camera::updateCameraFront() {
   newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
   front = glm::normalize(newFront);
 
-  // Recalculate the right and up vectors
-  right = glm::normalize(glm::cross(front, worldUp)); // Right vector
-  up = glm::normalize(glm::cross(right, front));      // Up vector
+
+  right = glm::normalize(glm::cross(front, worldUp)); 
+  up = glm::normalize(glm::cross(right, front));   
 }
 
 void Camera::setAspectRatio(float aspectRatio) {
@@ -75,7 +75,7 @@ glm::vec3 Camera::calculateGravitationalForce(const CelestialBody &body) {
   glm::vec3 direction = body.position - position;
   float distance = glm::length(direction);
   if (distance == 0.0f)
-    return glm::vec3(0.0f); // Avoid division by zero
+    return glm::vec3(0.0f); 
 
   float forceMagnitude =
       gravitationalConstant * (body.mass) / (distance * distance);

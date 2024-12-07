@@ -3,8 +3,6 @@
 
 RayCaster::RayCaster(Camera *camera) : camera(camera) {}
 
-/** calculate the ray from the camera through the screen position (mouse
-  coordinates) **/
 Ray RayCaster::getRayFromScreenCoordinates(float x, float y,
                                            const glm::mat4 &projection,
                                            const glm::mat4 &view) {

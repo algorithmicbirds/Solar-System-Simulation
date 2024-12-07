@@ -39,9 +39,9 @@ void WindowManager::initWindow(int width, int height) {
     exit(-1);
   }
 
-  // Set the aspect ratio of the camera
+
   camera->setAspectRatio((float)width / (float)height);
-  // Set window user pointer for callbacks
+  
   glfwSetWindowUserPointer(window, this);
 }
 
@@ -49,17 +49,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods);
 
 void WindowManager::setupCallbacks() {
-  // Set GLFW callbacks for input
+
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
-  glfwSetKeyCallback(window, key_callback); // This is the key callback
-
-  // Hide the cursor when it's locked to the window for FPS camera control
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+  glfwSetKeyCallback(window, key_callback); 
+  glfwSetInputMode(window, GLFW_CURSOR,
+                   GLFW_CURSOR_DISABLED); 
 }
 
+
 void WindowManager::processInput(float deltaTime) {
-  // Check for keyboard input (W, A, S, D, Space, Shift, F)
+ 
   bool w = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
   bool s = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
   bool a = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
@@ -106,7 +106,7 @@ void WindowManager::mouse_callback(GLFWwindow *window, double xpos,
   float xoffset = xpos - wm->lastX;
   float yoffset = wm->lastY - ypos; // Invert y-axis to match FPS style
 
-  // Process the mouse movement to update the camera's yaw and pitch
+ 
   wm->camera->processMouseMovement(xoffset, yoffset);
 
   // Update the last mouse positions

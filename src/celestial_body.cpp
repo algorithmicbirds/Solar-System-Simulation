@@ -13,7 +13,7 @@ void CelestialBody::updateBody(float deltaTime, const glm::vec3 &force) {
 glm::vec3
 CelestialBody::calculateGravitationalForce(const CelestialBody &other) {
   glm::vec3 direction =
-      other.position - position; // vector from this body to the other body
+      other.position - position; 
   float distanceSquared = glm::dot(direction, direction);
 
   // avoid division by zero by checking if the bodies are too close
