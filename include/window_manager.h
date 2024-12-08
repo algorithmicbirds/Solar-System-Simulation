@@ -1,38 +1,34 @@
-#ifndef WINDOWMANAGER_H
-#define WINDOWMANAGER_H
+#ifndef WINDOW_MANAGER_H
+#define WINDOW_MANAGER_H
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <camera.h>
-#include <chrono>
 
 class WindowManager {
 public:
   GLFWwindow *window;
-  Camera *camera;
-  static double deltaTime;
-  WindowManager(int width, int height, Camera *cam);
+  Camera &camera;
+
+  WindowManager(int width, int height, const char *title, Camera &cam);
   ~WindowManager();
 
+  bool shouldClose() const;
   void processInput(float deltaTime);
-  void setupCallbacks();
-  bool shouldClose();
-  void swapBuffers();
-  void pollEvents();
+  void pollEvents() const;
+  void swapBuffers() const;
+
+  static void framebufferSizeCallback(GLFWwindow *window, int width,
+                                      int height);
+  static void mouseCallback(GLFWwindow *window, double xpos, double ypos);
+  static void scrollCallback(GLFWwindow *window, double xoffset,
+                             double yoffset);
 
 private:
-  double lastX, lastY;
-  bool firstMouse;
-  bool isFullscreen;
-  int windowedWidth, windowedHeight;
-  std::chrono::steady_clock::time_point lastToggleTime =
-      std::chrono::steady_clock::now();
-
-  void initWindow(int width, int height);
-  void toggleFullscreen();
-
-  static void framebuffer_size_callback(GLFWwindow *window, int width,
-                                        int height);
-  static void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+  static Camera *activeCamera;
+  static float lastX;
+  static float lastY;
+  static bool firstMouse;
 };
 
 #endif
