@@ -15,59 +15,124 @@
 #include <raycaster.h>
 #include <collision_detector.h>
 #include <globals.h>
+#include <btBulletDynamicsCommon.h>
 
+// Bullet Physics components
+btBroadphaseInterface *broadphase;
+btDefaultCollisionConfiguration *collisionConfig;
+btCollisionDispatcher *dispatcher;
+btSequentialImpulseConstraintSolver *solver;
+btDiscreteDynamicsWorld *dynamicsWorld;
 
 Camera camera(glm::vec3(100.0f, 4.0f, 0.0f), 0.0f, 0.0f, 45.0f);
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-glm::vec3 calculateOrbitalVelocity(float centralMass, float distance) {
-  return glm::vec3(0.0f, sqrt(gravitationalConstant * centralMass / distance),
-                   0.0f);
+void initPhysics() {
+  broadphase = new btDbvtBroadphase();
+  collisionConfig = new btDefaultCollisionConfiguration();
+  dispatcher = new btCollisionDispatcher(collisionConfig);
+  solver = new btSequentialImpulseConstraintSolver();
+  dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver,
+                                              collisionConfig);
+  dynamicsWorld->setGravity(btVector3(0, 0, 0)); // No uniform gravity
+}
+
+void cleanupPhysics() {
+  delete dynamicsWorld;
+  delete solver;
+  delete dispatcher;
+  delete collisionConfig;
+  delete broadphase;
+}
+
+// Celestial Body and gravitational force calculation
+btRigidBody *createCelestialBody(float mass, float radius,
+                                 const glm::vec3 &position) {
+  btCollisionShape *shape = new btSphereShape(radius);
+  btDefaultMotionState *motionState = new btDefaultMotionState(btTransform(
+      btQuaternion(0, 0, 0, 1), btVector3(position.x, position.y, position.z)));
+  btVector3 inertia(0, 0, 0);
+  if (mass > 0.0f)
+    shape->calculateLocalInertia(mass, inertia);
+
+  btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape,
+                                                  inertia);
+  btRigidBody *body = new btRigidBody(rbInfo);
+
+  dynamicsWorld->addRigidBody(body);
+  return body;
+}
+
+void applyGravitationalForces(std::vector<btRigidBody *> &bodies) {
+  const float G = 6.67430e-11f; // Gravitational constant (m^3 kg^-1 s^-2)
+
+  for (size_t i = 0; i < bodies.size(); ++i) {
+    btRigidBody *bodyA = bodies[i];
+    btVector3 force(0, 0, 0);
+
+    for (size_t j = 0; j < bodies.size(); ++j) {
+      if (i == j)
+        continue;
+
+      btRigidBody *bodyB = bodies[j];
+      btVector3 posA = bodyA->getCenterOfMassPosition();
+      btVector3 posB = bodyB->getCenterOfMassPosition();
+
+      btVector3 direction = posB - posA;
+      float distance = direction.length();
+      if (distance > 1e-3) { // Avoid division by zero
+        float massA = bodyA->getMass();
+        float massB = bodyB->getMass();
+        float forceMagnitude = (G * massA * massB) / (distance * distance);
+        force += direction.normalized() * forceMagnitude;
+      }
+    }
+
+    bodyA->applyCentralForce(force);
+  }
 }
 
 int main() {
+  // Initialize Bullet Physics
+  initPhysics();
+
+  // Set up GLFW window
   WindowManager windowManager(SCR_WIDTH, SCR_HEIGHT, &camera);
   glfwSetWindowUserPointer(windowManager.window, &windowManager);
 
+  // Load shaders
   Shader starfieldShader(RESOURCES_PATH "shaders/starfield.vert",
                          RESOURCES_PATH "shaders/starfield.frag");
   Shader modelShader(RESOURCES_PATH "shaders/sphere.vert",
                      RESOURCES_PATH "shaders/sphere.frag");
-  Shader centralBodyShader(RESOURCES_PATH "shaders/centralBody.vert", 
-      RESOURCES_PATH "shaders/centralBody.frag");
+  Shader centralBodyShader(RESOURCES_PATH "shaders/centralBody.vert",
+                           RESOURCES_PATH "shaders/centralBody.frag");
 
+  // Set up starfield and models
   Starfield starfield1(10000, 40000.0f);
   std::vector<Mesh> modelMeshes =
       ModelLoader::loadModel(RESOURCES_PATH "models/sphere.glb");
 
+  // Set up camera and window
   windowManager.setupCallbacks();
-
   glm::mat4 view;
   glm::mat4 projection = glm::perspective(
       glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 50000.0f);
 
-  CelestialBody centralBody(500.0f, 1000000.0f, glm::vec3(0.0f),
-                            glm::vec3(0.0f));
-  float distanceBuffer = 3000.0f;
+  // Create celestial bodies
+  std::vector<btRigidBody *> celestialBodies;
+  celestialBodies.push_back(createCelestialBody(
+      1e6, 500.0f, glm::vec3(0.0f, 0.0f, 0.0f))); // Central body
+  celestialBodies.push_back(createCelestialBody(
+      1e3, 180.0f, glm::vec3(5000.0f, 0.0f, 0.0f))); // Orbiting body 1
+  celestialBodies.push_back(createCelestialBody(
+      1e3, 200.0f, glm::vec3(15000.0f, 0.0f, 0.0f))); // Orbiting body 2
+  celestialBodies.push_back(createCelestialBody(
+      1e3, 130.0f, glm::vec3(25000.0f, 0.0f, 0.0f))); // Orbiting body 3
 
-  CelestialBody body1(
-      180.0f, 30000.0f, glm::vec3(1000.0f + distanceBuffer, 0.0f, 0.0f),
-      calculateOrbitalVelocity(centralBody.mass, 5000.0f + distanceBuffer));
-  CelestialBody body2(
-      200.0f, 30000.0f, glm::vec3(2000.0f + distanceBuffer, 0.0f, 0.0f),
-      calculateOrbitalVelocity(centralBody.mass, 15000.0f + distanceBuffer));
-  CelestialBody body3(
-      130.0f, 30000.0f, glm::vec3(3000.0f + distanceBuffer, 0.0f, 0.0f),
-      calculateOrbitalVelocity(centralBody.mass, 25000.0f + distanceBuffer));
-
-  std::vector<CelestialBody> bodies = {centralBody, body1, body2, body3};
-
-  RayCaster rayCaster(&camera);
-  CollisionDetector collisionDetector(&rayCaster);
-
-
+  // Main loop
   while (!windowManager.shouldClose()) {
     float currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -75,82 +140,42 @@ int main() {
 
     windowManager.processInput(deltaTime);
 
-    glm::vec3 totalGravitationalForce(0.0f);
-    for (const auto &body : bodies) {
-      totalGravitationalForce += camera.calculateGravitationalForce(body);
-    }
+    // Apply custom gravitational forces
+    applyGravitationalForces(celestialBodies);
 
-    camera.position += totalGravitationalForce * deltaTime;
+    // Step the physics simulation
+    dynamicsWorld->stepSimulation(deltaTime, 10);
 
-    collisionDetector.resolveCameraCollisions(camera, bodies);
-
+    // Render celestial bodies
     view = camera.getViewMatrix();
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    starfieldShader.use();
-    starfieldShader.setMat4("projection", projection);
-    starfieldShader.setMat4("view", view);
-    starfield1.render(starfieldShader, projection, view);
+    for (btRigidBody *body : celestialBodies) {
+      btTransform transform;
+      body->getMotionState()->getWorldTransform(transform);
+      btVector3 pos = transform.getOrigin();
 
-    modelShader.use();
-    modelShader.setMat4("projection", projection);
-    modelShader.setMat4("view", view);
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, glm::vec3(pos.x(), pos.y(), pos.z()));
+      model =
+          glm::scale(model, glm::vec3(500.0f)); // Adjust for the body's radius
 
-    for (auto &body : bodies) {
-      glm::vec3 totalForce(0.0f);
-      for (const auto &otherBody : bodies) {
-        if (&body != &otherBody) {
-          totalForce += body.calculateGravitationalForce(otherBody);
-        }
-      }
+      modelShader.use();
+      modelShader.setMat4("projection", projection);
+      modelShader.setMat4("view", view);
+      modelShader.setMat4("model", model);
 
-      body.updateBody(deltaTime, totalForce);
-    }
-
-for (const auto &body : bodies) {
-      if (&body == &centralBody) {
-        centralBodyShader.use();
-
-        glm::vec3 lightPos = body.position; 
-        glm::vec3 lightColor(3.0f, 5.0f, 1.0f); 
-
-        centralBodyShader.setVec3("lightPos", lightPos);
-        centralBodyShader.setVec3("lightColor", lightColor);
-        centralBodyShader.setVec3("viewPos",
-                                  camera.position); 
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, body.position);
-        model = glm::scale(model,
-                           glm::vec3(body.radius)); 
-        centralBodyShader.setMat4("model", model);
-
-        for (Mesh &mesh : modelMeshes) {
-          mesh.Draw(centralBodyShader);
-        }
-      } else {
-        // Render other bodies with the regular shader
-        modelShader.use();
-        modelShader.setMat4("projection", projection);
-        modelShader.setMat4("view", view);
-
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, body.position);
-        model = glm::scale(model, glm::vec3(body.radius));
-        modelShader.setMat4("model", model);
-
-        for (Mesh &mesh : modelMeshes) {
-          mesh.Draw(modelShader);
-        }
+      for (Mesh &mesh : modelMeshes) {
+        mesh.Draw(modelShader);
       }
     }
-
-
 
     windowManager.swapBuffers();
     windowManager.pollEvents();
   }
 
+  // Clean up physics
+  cleanupPhysics();
   return 0;
 }

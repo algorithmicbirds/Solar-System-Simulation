@@ -10,12 +10,22 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-# Disable Bullet3 Examples, Applications, and Tests
-set(BUILD_EXAMPLES OFF CACHE BOOL "Disable Bullet3 Examples" FORCE)
-set(BUILD_APP_EXAMPLES OFF CACHE BOOL "Disable Bullet3 Applications" FORCE)
-set(BUILD_TESTING OFF CACHE BOOL "Disable Bullet3 Tests" FORCE)
-set(BUILD_BULLET3_EXAMPLES OFF CACHE BOOL "Disable Bullet3 ExampleBrowser and other examples" FORCE)
-set(BUILD_BULLET3_DEMOS OFF CACHE BOOL "Disable Bullet3 Demos" FORCE)
+find_package(Bullet QUIET)
+
+if (NOT BULLET_FOUND)
+    message(STATUS "Bullet not found, attempting to install Bullet using compile.bat")
+    add_custom_target(
+        install_bullet
+        COMMAND "${CMAKE_SOURCE_DIR}/compile.bat"
+        COMMENT "Installing Bullet Physics"
+        VERBATIM
+    )
+    add_dependencies("${CMAKE_PROJECT_NAME}" install_bullet)
+    find_package(Bullet REQUIRED)
+else()
+    message(STATUS "Bullet found")
+endif()
+
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -26,7 +36,6 @@ add_subdirectory(thirdparty/stb_truetype)		#loading ttf files
 add_subdirectory(thirdparty/glm)				#math
 add_subdirectory(thirdparty/imgui-docking)		#ui
 add_subdirectory(thirdparty/assimp)             #Model loader
-add_subdirectory(thirdparty/bullet3)
 
 
 # Define MY_SOURCES to be a list of all the source file
@@ -56,11 +65,10 @@ if(MSVC) # If using the VS compiler...
 
 endif()
 
-
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+target_include_directories(solar-sim PRIVATE ${BULLET_INCLUDE_DIRS})
+target_link_libraries(solar-sim PRIVATE ${BULLET_LIBRARIES})
 
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image 
-    stb_truetype imgui assimp Bullet3Common Bullet3Dynamics 
-    Bullet3Collision)
-
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE ${BULLET_LIBRARIES} glm glfw glad stb_image 
+    stb_truetype imgui assimp)
 
